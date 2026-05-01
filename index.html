@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subtraction Fishing! 🎣</title>
+    <style>
+        :root {
+            --pond-blue: #0984e3;
+            --pond-yellow: #ffa502;
+            --pond-dark: #2f3542;
+            --win-color: #2ed573;
+            --font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif;
+            --pond-accent: #74b9ff;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: #a29bfe;
+            background-image: radial-gradient(#ffffff 2px, transparent 2px);
+            background-size: 30px 30px;
+            color: #2f3542;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background: var(--pond-blue);
+            padding: 40px;
+            border-radius: 50px 50px 20px 20px;
+            border: 12px solid #74b9ff;
+            box-shadow: 0 20px 0 #0652dd, 0 30px 50px rgba(0,0,0,0.2);
+            position: relative;
+            max-width: 650px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .header-lights {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+
+        .light {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #fff;
+            animation: blink 0.5s infinite alternate;
+        }
+
+        @keyframes blink {
+            from { opacity: 0.3; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1.1); box-shadow: 0 0 10px #fff; }
+        }
+
+        .title {
+            color: white;
+            text-shadow: 3px 3px 0 #0652dd;
+            font-size: 3rem;
+            margin: 0 0 10px 0;
+            letter-spacing: 2px;
+        }
+
+        /* Fishing Pond Display */
+        .fishing-pond {
+            background: radial-gradient(circle at 50% 30%, #81ecec, #00cec9, #0984e3);
+            height: 250px;
+            border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%;
+            border: 15px solid #2d3436;
+            margin-bottom: 30px;
+            box-shadow: 
+                inset 0 10px 20px rgba(0,0,0,0.5),
+                0 10px 0 #1e272e,
+                0 20px 30px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-size: 200% 200%;
+            animation: water-ripple 10s infinite alternate ease-in-out;
+        }
+
+        @keyframes water-ripple {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        .water-line {
+            position: absolute;
+            top: 25%;
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            filter: blur(2px);
+        }
+
+        .fish-hook {
+            font-size: 3.5rem;
+            position: absolute;
+            top: -60px;
+            transition: top 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 5;
+            filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3));
+        }
+
+        .fish-hook.casting {
+            top: 40%;
+        }
+
+        .catch-display {
+            font-size: 5rem;
+            position: absolute;
+            bottom: -100px;
+            transition: all 0.8s ease-out;
+            z-index: 4;
+        }
+
+        .catch-display.caught {
+            bottom: 40%;
+            transform: scale(1.5);
+        }
+
+        /* Columnar Subtraction Layout */
+        .subtraction-grid {
+            display: inline-grid;
+            grid-template-columns: 50px repeat(3, 80px);
+            grid-template-rows: 110px 80px 10px 80px;
+            gap: 5px;
+            align-items: center;
+            justify-items: center;
+            margin: 20px 0;
+            font-size: 3.5rem;
+            background: rgba(255,255,255,0.9);
+            padding: 20px;
+            border-radius: 15px;
+            color: #2f3542;
+        }
+
+        .line-row { grid-row: 3; grid-column: 1 / 5; width: 100%; height: 6px; background: #2f3542; border-radius: 3px; }
+        
+        .digit-container {
+            position: relative;
+            width: 80px;
+            height: 110px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            padding-bottom: 5px;
+        }
+
+        .replacement-input {
+            width: 35px;
+            height: 35px;
+            font-size: 1.2rem;
+            text-align: center;
+            border: 2px dashed #ffa502;
+            border-radius: 5px;
+            background: #fff;
+            margin-bottom: 5px;
+            font-family: var(--font-family);
+            color: #d63031;
+            font-weight: bold;
+        }
+
+        .digit-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            position: relative;
+        }
+
+        .borrow-1 {
+            font-size: 1.8rem;
+            color: #d63031;
+            font-weight: bold;
+            width: 25px;
+            text-align: right;
+            cursor: pointer;
+            user-select: none;
+            opacity: 0.1;
+            transition: opacity 0.2s;
+        }
+
+        .borrow-1:hover { opacity: 0.4; }
+        .borrow-1.active { opacity: 1; }
+
+        .digit {
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+            margin-left: 2px;
+            padding: 0 5px;
+        }
+        .digit.crossed {
+            color: #a4b0be;
+            position: relative;
+        }
+        .digit.crossed::after {
+            content: "";
+            position: absolute;
+            left: -5px;
+            top: 50%;
+            width: calc(100% + 10px);
+            height: 6px;
+            background: rgba(214, 48, 49, 0.8);
+            transform: rotate(-25deg);
+            border-radius: 3px;
+        }
+
+        input.digit-input {
+            width: 70px;
+            height: 70px;
+            font-size: 3rem;
+            text-align: center;
+            background: #fff;
+            color: #2f3542;
+            border: 4px solid var(--pond-yellow);
+            border-radius: 12px;
+            font-family: var(--font-family);
+        }
+
+        input.digit-input:focus { outline: none; border-color: var(--pond-blue); }
+
+        /* Buttons */
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 15px 35px;
+            font-size: 1.4rem;
+            font-family: var(--font-family);
+            cursor: pointer;
+            border: none;
+            border-radius: 50px;
+            transition: all 0.2s;
+            box-shadow: 0 8px 0 #0652dd;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        button:active { transform: translateY(4px); box-shadow: 0 4px 0 #0652dd; }
+
+        #check-btn { background: var(--pond-yellow); color: #fff; text-shadow: 1px 1px 0 #0652dd; }
+        #print-btn { background: #f1f2f6; color: #2f3542; box-shadow: 0 8px 0 #ced4da; }
+        #next-btn { background: var(--win-color); color: #fff; box-shadow: 0 8px 0 #218c74; }
+
+        /* Splash Animation */
+        .splash-drop {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            z-index: 1000;
+            animation: splash var(--duration) ease-out forwards;
+        }
+
+        @keyframes splash {
+            0% { transform: translate(0, 0) scale(0.5); opacity: 1; }
+            50% { opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(var(--s)); opacity: 0; }
+        }
+
+        /* Print Styling */
+        @media print {
+            body { background: white; color: black; padding: 0; }
+            .game-container { border: 2px solid #000; box-shadow: none; background: white; padding: 20px; border-radius: 0; }
+            .controls, .header-lights, .fishing-pond { display: none !important; }
+            .subtraction-grid { background: white; border: 1px solid #000; color: black; font-size: 2rem; }
+            input.digit-input { border: 1px solid black; color: black; background: white; }
+            input.replacement-input { border: none; border-bottom: 1px dashed #000; color: black; }
+            .borrow-1:not(.active) { display: none; }
+            .line-row { background: black; }
+            .title { color: black; text-shadow: none; }
+            #workings-print { display: block !important; }
+            .digit.crossed::after { -webkit-print-color-adjust: exact; }
+        }
+
+        #workings-print {
+            display: none;
+            margin-top: 50px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container" id="machine">
+        <div class="header-lights">
+            <div class="light" style="animation-delay: 0s; background: #ff4757;"></div>
+            <div class="light" style="animation-delay: 0.1s; background: #ffa502;"></div>
+            <div class="light" style="animation-delay: 0.2s; background: #2ed573;"></div>
+            <div class="light" style="animation-delay: 0.3s; background: #1e90ff;"></div>
+            <div class="light" style="animation-delay: 0.4s; background: #ff4757;"></div>
+        </div>
+
+        <h1 class="title">SUBTRACTION FISHING! 🎣</h1>
+
+        <div class="fishing-pond" id="fishing-pond">
+            <div class="water-line"></div>
+            <div id="fish-hook" class="fish-hook">🪝</div>
+            <div id="catch-display" class="catch-display"></div>
+        </div>
+
+        <div class="subtraction-grid">
+            <!-- Number 1 -->
+            <div style="grid-column: 1;"></div>
+            <div class="digit-container">
+                <input type="text" class="replacement-input" id="rep-h" maxlength="1">
+                <div class="digit-row">
+                    <span class="borrow-1" id="b1-h" onclick="toggleBorrow(this)" style="visibility: hidden;">1</span>
+                    <span id="n1-h" class="digit" onclick="toggleCross(this)">0</span>
+                </div>
+            </div>
+            <div class="digit-container">
+                <input type="text" class="replacement-input" id="rep-t" maxlength="1">
+                <div class="digit-row">
+                    <span class="borrow-1" id="b1-t" onclick="toggleBorrow(this)">1</span>
+                    <span id="n1-t" class="digit" onclick="toggleCross(this)">0</span>
+                </div>
+            </div>
+            <div class="digit-container">
+                <input type="text" class="replacement-input" id="rep-o" maxlength="1" style="visibility: hidden;">
+                <div class="digit-row">
+                    <span class="borrow-1" id="b1-o" onclick="toggleBorrow(this)">1</span>
+                    <span id="n1-o" class="digit" onclick="toggleCross(this)">0</span>
+                </div>
+            </div>
+
+            <!-- Number 2 -->
+            <div style="grid-column: 1;">-</div>
+            <div id="n2-h">0</div>
+            <div id="n2-t">0</div>
+            <div id="n2-o">0</div>
+
+            <!-- Line -->
+            <div class="line-row"></div>
+
+            <!-- Answer Inputs -->
+            <div></div>
+            <input type="number" class="digit-input" id="in-h" oninput="this.value=this.value.slice(0,1)">
+            <input type="number" class="digit-input" id="in-t" oninput="this.value=this.value.slice(0,1)">
+            <input type="number" class="digit-input" id="in-o" oninput="this.value=this.value.slice(0,1)">
+        </div>
+
+        <div class="controls">
+            <button id="check-btn">CAST LINE! 🎣</button>
+            <button id="next-btn">NEW FISH! 🐟</button>
+            <button id="print-btn">PRINT 🖨️</button>
+        </div>
+
+        <div id="workings-print">
+            <div id="print-content"></div>
+        </div>
+    </div>
+
+    <script>
+        let val1 = 0, val2 = 0;
+
+        const checkBtn = document.getElementById('check-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const printBtn = document.getElementById('print-btn');
+        const printContent = document.getElementById('print-content');
+        const hook = document.getElementById('fish-hook');
+        const catchDisplay = document.getElementById('catch-display');
+
+        function toggleBorrow(el) {
+            el.classList.toggle('active');
+        }
+
+        function toggleCross(el) {
+            el.classList.toggle('crossed');
+        }
+
+        function generateProblem() {
+            catchDisplay.classList.remove('caught');
+            catchDisplay.innerText = '';
+            hook.classList.remove('casting');
+            
+            val1 = Math.floor(Math.random() * 990) + 10;
+            val2 = Math.floor(Math.random() * 990) + 10;
+            if (val1 < val2) [val1, val2] = [val2, val1];
+
+            const h1 = Math.floor(val1 / 100);
+            const t1 = Math.floor((val1 % 100) / 10);
+            const o1 = val1 % 10;
+            
+            const h2 = Math.floor(val2 / 100);
+            const t2 = Math.floor((val2 % 100) / 10);
+            const o2 = val2 % 10;
+
+            document.getElementById('n1-h').innerText = h1 || '';
+            document.getElementById('n1-t').innerText = (h1 === 0 && t1 === 0) ? '' : t1;
+            document.getElementById('n1-o').innerText = o1;
+
+            document.getElementById('n2-h').innerText = h2 || '';
+            document.getElementById('n2-t').innerText = (h2 === 0 && t2 === 0) ? '' : t2;
+            document.getElementById('n2-o').innerText = o2;
+
+            document.getElementById('in-h').value = '';
+            document.getElementById('in-t').value = '';
+            document.getElementById('in-o').value = '';
+            
+            document.getElementById('rep-h').value = '';
+            document.getElementById('rep-t').value = '';
+            document.getElementById('rep-o').value = '';
+            
+            document.querySelectorAll('.borrow-1').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.digit').forEach(d => d.classList.remove('crossed'));
+        }
+
+        nextBtn.addEventListener('click', generateProblem);
+
+        checkBtn.addEventListener('click', () => {
+            const h = parseInt(document.getElementById('in-h').value) || 0;
+            const t = parseInt(document.getElementById('in-t').value) || 0;
+            const o = parseInt(document.getElementById('in-o').value) || 0;
+            
+            const userTotal = h * 100 + t * 10 + o;
+            const correctTotal = val1 - val2;
+
+            hook.classList.add('casting');
+            
+            setTimeout(() => {
+                if (userTotal === correctTotal) {
+                    const fish = ['🐟', '🐠', '🐡', '🦈', '🦀', '🦞', '🐋', '🐬'];
+                    catchDisplay.innerText = fish[Math.floor(Math.random() * fish.length)];
+                    catchDisplay.classList.add('caught');
+                    spewWater(40);
+                } else {
+                    const junk = ['🥾', '👟', '🥫', '🧤', '🦴', '🛞', '🎒'];
+                    catchDisplay.innerText = junk[Math.floor(Math.random() * junk.length)];
+                    catchDisplay.classList.add('caught');
+                    setTimeout(() => {
+                        alert(`Oh no, you caught some junk! The correct answer was ${correctTotal}. Try another fish!`);
+                    }, 1000);
+                }
+            }, 500);
+        });
+
+        function spewWater(count = 40) {
+            const pond = document.getElementById('fishing-pond');
+            const rect = pond.getBoundingClientRect();
+
+            for (let i = 0; i < count; i++) {
+                const drop = document.createElement('div');
+                drop.className = 'splash-drop';
+                drop.innerText = '💧';
+                
+                drop.style.left = (rect.left + rect.width / 2) + 'px';
+                drop.style.top = (rect.top + rect.height / 2) + 'px';
+                
+                const tx = (Math.random() - 0.5) * 600;
+                const ty = -(Math.random() * 300 + 100);
+                const rot = Math.random() * 360;
+                const s = Math.random() * 0.5 + 0.5;
+                
+                drop.style.setProperty('--tx', tx + 'px');
+                drop.style.setProperty('--ty', ty + 'px');
+                drop.style.setProperty('--rot', rot + 'deg');
+                drop.style.setProperty('--s', s);
+                drop.style.setProperty('--duration', (Math.random() * 0.8 + 0.5) + 's');
+                
+                document.body.appendChild(drop);
+                setTimeout(() => drop.remove(), 1500);
+            }
+        }
+
+        printBtn.addEventListener('click', () => {
+            const hInput = document.getElementById('in-h').value;
+            const tInput = document.getElementById('in-t').value;
+            const oInput = document.getElementById('in-o').value;
+            const userValStr = (hInput || '0') + (tInput || '0') + (oInput || '0');
+
+            printContent.innerHTML = `
+                <div style="text-align: center; margin-top: 20px;">
+                    <p style="font-size: 1.5rem;"><strong>Big Catch Challenge:</strong> ${val1} - ${val2} = ${userValStr}</p>
+                </div>
+            `;
+            window.print();
+        });
+
+        generateProblem();
+    </script>
+</body>
+</html>
