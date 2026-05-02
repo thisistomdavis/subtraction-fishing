@@ -482,13 +482,17 @@
             const t2 = Math.floor((val2 % 100) / 10);
             const o2 = val2 % 10;
 
-            document.getElementById('n1-h').innerText = h1 || '0';
-            document.getElementById('n1-t').innerText = t1;
+            document.getElementById('n1-h').innerText = h1 || '';
+            document.getElementById('n1-t').innerText = (h1 === 0 && t1 === 0) ? '' : t1;
             document.getElementById('n1-o').innerText = o1;
 
-            document.getElementById('n2-h').innerText = h2 || '0';
-            document.getElementById('n2-t').innerText = t2;
+            document.getElementById('n2-h').innerText = h2 || '';
+            document.getElementById('n2-t').innerText = (h2 === 0 && t2 === 0) ? '' : t2;
             document.getElementById('n2-o').innerText = o2;
+
+            // Hide borrows if digit is hidden
+            document.getElementById('b1-h').style.visibility = h1 ? 'visible' : 'hidden';
+            document.getElementById('b1-t').style.visibility = (h1 || t1) ? 'visible' : 'hidden';
 
             document.getElementById('in-h').value = '';
             document.getElementById('in-t').value = '';
@@ -627,14 +631,14 @@
                             <div class="replacement-input">${w.reps.h}</div>
                             <div class="digit-row">
                                 <span class="borrow-1 ${w.borrows.h ? 'active' : ''}" style="${h1 === 0 ? 'visibility:hidden' : ''}">1</span>
-                                <span class="digit ${w.crossed.h ? 'crossed' : ''}">${h1}</span>
+                                <span class="digit ${w.crossed.h ? 'crossed' : ''}">${h1 || ''}</span>
                             </div>
                         </div>
                         <div class="digit-container">
                             <div class="replacement-input">${w.reps.t}</div>
                             <div class="digit-row">
-                                <span class="borrow-1 ${w.borrows.t ? 'active' : ''}">1</span>
-                                <span class="digit ${w.crossed.t ? 'crossed' : ''}">${t1}</span>
+                                <span class="borrow-1 ${w.borrows.t ? 'active' : ''}" style="${(h1 === 0 && t1 === 0) ? 'visibility:hidden' : ''}">1</span>
+                                <span class="digit ${w.crossed.t ? 'crossed' : ''}">${(h1 === 0 && t1 === 0) ? '' : t1}</span>
                             </div>
                         </div>
                         <div class="digit-container">
@@ -646,8 +650,8 @@
                         </div>
 
                         <div style="grid-column: 1;">-</div>
-                        <div>${h2}</div>
-                        <div>${t2}</div>
+                        <div>${h2 || ''}</div>
+                        <div>${(h2 === 0 && t2 === 0) ? '' : t2}</div>
                         <div>${o2}</div>
 
                         <div class="line-row"></div>
