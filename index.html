@@ -272,24 +272,99 @@
 
         /* Print Styling */
         @media print {
-            body { background: white; color: black; padding: 0; }
-            .game-container { border: 2px solid #000; box-shadow: none; background: white; padding: 20px; border-radius: 0; }
-            .controls, .header-lights, .fishing-pond { display: none !important; }
-            .subtraction-grid { background: white; border: 1px solid #000; color: black; font-size: 2rem; }
-            input.digit-input { border: 1px solid black; color: black; background: white; }
-            input.replacement-input { border: none; border-bottom: 1px dashed #000; color: black; }
-            .borrow-1:not(.active) { display: none; }
-            .line-row { background: black; }
-            .title { color: black; text-shadow: none; }
-            #workings-print { display: block !important; }
-            .digit.crossed::after { -webkit-print-color-adjust: exact; }
+            body { background: white !important; color: black !important; padding: 0 !important; }
+            .game-container { border: none !important; box-shadow: none !important; background: white !important; padding: 0 !important; max-width: none !important; width: 100% !important; }
+            .controls, .header-lights, .fishing-pond, .title { display: none !important; }
+            .subtraction-grid { display: none !important; }
+            
+            #workings-print { display: block !important; margin: 0; padding: 0; }
+            #print-content {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                padding: 10px;
+            }
+
+            .print-item {
+                page-break-inside: avoid;
+                border: 1px solid #000;
+                padding: 10px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 42vh; /* Reduced height to fit title + 2 rows */
+            }
+
+            .print-item .subtraction-grid {
+                display: inline-grid !important;
+                background: white !important;
+                border: none !important;
+                color: black !important;
+                font-size: 1.3rem !important; /* Slightly smaller font */
+                grid-template-columns: 35px repeat(3, 50px) !important;
+                grid-template-rows: 65px 50px 4px 50px !important;
+                padding: 5px !important;
+                margin: 0 !important;
+                gap: 2px !important;
+            }
+
+            .print-item .digit-container {
+                width: 50px !important;
+                height: 65px !important;
+            }
+
+            .print-item .replacement-input {
+                width: 22px !important;
+                height: 22px !important;
+                font-size: 0.9rem !important;
+                border: 1px dashed #000 !important;
+                margin-bottom: 2px !important;
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+                color: #000 !important;
+            }
+
+            .print-item .digit-input-print {
+                width: 40px;
+                height: 40px;
+                font-size: 1.3rem;
+                text-align: center;
+                border: 1px solid #000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #fff;
+                font-family: var(--font-family);
+            }
+
+            .print-item .borrow-1 {
+                font-size: 1rem !important;
+                width: 20px !important;
+                color: #000 !important;
+            }
+            .print-item .borrow-1:not(.active) { visibility: hidden !important; }
+
+            .print-item .line-row {
+                background: black !important;
+                height: 4px !important;
+            }
+            
+            .digit.crossed::after {
+                background: rgba(0, 0, 0, 0.6) !important;
+                -webkit-print-color-adjust: exact;
+                height: 4px !important;
+            }
         }
 
         #workings-print {
             display: none;
             margin-top: 50px;
-            text-align: left;
+            text-align: center;
         }
+
+        .digit-input-print { display: none; } /* Only show in print via createPrintItem */
     </style>
 </head>
 <body>
@@ -355,23 +430,33 @@
         <div class="controls">
             <button id="check-btn">CAST LINE! 🎣</button>
             <button id="next-btn">NEW FISH! 🐟</button>
-            <button id="print-btn">PRINT 🖨️</button>
+            <button id="save-btn" style="background: #a29bfe; color: #fff; box-shadow: 0 8px 0 #6c5ce7;">SAVE 💾</button>
+            <button id="print-btn">PRINT (0) 🖨️</button>
+            <button id="clear-btn" style="background: #fab1a0; color: #fff; box-shadow: 0 8px 0 #e17055;">CLEAR 🗑️</button>
         </div>
 
         <div id="workings-print">
+            <h2 style="text-align: center;">My Fishing Catch Log 🎣</h2>
             <div id="print-content"></div>
         </div>
     </div>
 
     <script>
         let val1 = 0, val2 = 0;
+        let savedWorkings = JSON.parse(localStorage.getItem('fishing-workings') || '[]');
 
         const checkBtn = document.getElementById('check-btn');
         const nextBtn = document.getElementById('next-btn');
         const printBtn = document.getElementById('print-btn');
+        const saveBtn = document.getElementById('save-btn');
+        const clearBtn = document.getElementById('clear-btn');
         const printContent = document.getElementById('print-content');
         const hook = document.getElementById('fish-hook');
         const catchDisplay = document.getElementById('catch-display');
+
+        function updatePrintButton() {
+            printBtn.innerText = `PRINT (${savedWorkings.length}) 🖨️`;
+        }
 
         function toggleBorrow(el) {
             el.classList.toggle('active');
@@ -386,10 +471,9 @@
             catchDisplay.innerText = '';
             hook.classList.remove('casting');
             
-            val1 = Math.floor(Math.random() * 990) + 10;
-            val2 = Math.floor(Math.random() * 990) + 10;
-            if (val1 < val2) [val1, val2] = [val2, val1];
-
+            val1 = Math.floor(Math.random() * 890) + 100; // 3 digit focus
+            val2 = Math.floor(Math.random() * (val1 - 10)) + 10;
+            
             const h1 = Math.floor(val1 / 100);
             const t1 = Math.floor((val1 % 100) / 10);
             const o1 = val1 % 10;
@@ -398,12 +482,12 @@
             const t2 = Math.floor((val2 % 100) / 10);
             const o2 = val2 % 10;
 
-            document.getElementById('n1-h').innerText = h1 || '';
-            document.getElementById('n1-t').innerText = (h1 === 0 && t1 === 0) ? '' : t1;
+            document.getElementById('n1-h').innerText = h1 || '0';
+            document.getElementById('n1-t').innerText = t1;
             document.getElementById('n1-o').innerText = o1;
 
-            document.getElementById('n2-h').innerText = h2 || '';
-            document.getElementById('n2-t').innerText = (h2 === 0 && t2 === 0) ? '' : t2;
+            document.getElementById('n2-h').innerText = h2 || '0';
+            document.getElementById('n2-t').innerText = t2;
             document.getElementById('n2-o').innerText = o2;
 
             document.getElementById('in-h').value = '';
@@ -416,9 +500,54 @@
             
             document.querySelectorAll('.borrow-1').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.digit').forEach(d => d.classList.remove('crossed'));
+            
+            updatePrintButton();
         }
 
         nextBtn.addEventListener('click', generateProblem);
+
+        saveBtn.addEventListener('click', () => {
+            const workings = {
+                val1, val2,
+                inputs: {
+                    h: document.getElementById('in-h').value,
+                    t: document.getElementById('in-t').value,
+                    o: document.getElementById('in-o').value
+                },
+                reps: {
+                    h: document.getElementById('rep-h').value,
+                    t: document.getElementById('rep-t').value,
+                    o: document.getElementById('rep-o').value
+                },
+                borrows: {
+                    h: document.getElementById('b1-h').classList.contains('active'),
+                    t: document.getElementById('b1-t').classList.contains('active'),
+                    o: document.getElementById('b1-o').classList.contains('active')
+                },
+                crossed: {
+                    h: document.getElementById('n1-h').classList.contains('crossed'),
+                    t: document.getElementById('n1-t').classList.contains('crossed'),
+                    o: document.getElementById('n1-o').classList.contains('crossed')
+                },
+                fish: catchDisplay.innerText || '🐟'
+            };
+            
+            savedWorkings.push(workings);
+            localStorage.setItem('fishing-workings', JSON.stringify(savedWorkings));
+            updatePrintButton();
+            
+            // Visual feedback
+            saveBtn.innerText = 'SAVED! ✅';
+            setTimeout(() => { saveBtn.innerHTML = 'SAVE 💾'; }, 1000);
+        });
+
+        clearBtn.addEventListener('click', () => {
+            if (confirm('Clear all saved workings?')) {
+                savedWorkings = [];
+                localStorage.removeItem('fishing-workings');
+                updatePrintButton();
+            }
+        });
 
         checkBtn.addEventListener('click', () => {
             const h = parseInt(document.getElementById('in-h').value) || 0;
@@ -475,21 +604,75 @@
             }
         }
 
-        printBtn.addEventListener('click', () => {
-            const hInput = document.getElementById('in-h').value;
-            const tInput = document.getElementById('in-t').value;
-            const oInput = document.getElementById('in-o').value;
-            const userValStr = (hInput || '0') + (tInput || '0') + (oInput || '0');
+        function createPrintItem(w) {
+            const h1 = Math.floor(w.val1 / 100);
+            const t1 = Math.floor((w.val1 % 100) / 10);
+            const o1 = w.val1 % 10;
+            
+            const h2 = Math.floor(w.val2 / 100);
+            const t2 = Math.floor((w.val2 % 100) / 10);
+            const o2 = w.val2 % 10;
 
-            printContent.innerHTML = `
-                <div style="text-align: center; margin-top: 20px;">
-                    <p style="font-size: 1.5rem;"><strong>Big Catch Challenge:</strong> ${val1} - ${val2} = ${userValStr}</p>
+            const userTotal = (parseInt(w.inputs.h) || 0) * 100 + (parseInt(w.inputs.t) || 0) * 10 + (parseInt(w.inputs.o) || 0);
+
+            return `
+                <div class="print-item">
+                    <div style="font-size: 1.1rem; margin-bottom: 5px;">Catch: ${w.fish}</div>
+                    <div style="font-size: 1.4rem; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                        ${w.val1} - ${w.val2} = ${userTotal}
+                    </div>
+                    <div class="subtraction-grid">
+                        <div style="grid-column: 1;"></div>
+                        <div class="digit-container">
+                            <div class="replacement-input">${w.reps.h}</div>
+                            <div class="digit-row">
+                                <span class="borrow-1 ${w.borrows.h ? 'active' : ''}" style="${h1 === 0 ? 'visibility:hidden' : ''}">1</span>
+                                <span class="digit ${w.crossed.h ? 'crossed' : ''}">${h1}</span>
+                            </div>
+                        </div>
+                        <div class="digit-container">
+                            <div class="replacement-input">${w.reps.t}</div>
+                            <div class="digit-row">
+                                <span class="borrow-1 ${w.borrows.t ? 'active' : ''}">1</span>
+                                <span class="digit ${w.crossed.t ? 'crossed' : ''}">${t1}</span>
+                            </div>
+                        </div>
+                        <div class="digit-container">
+                            <div class="replacement-input">${w.reps.o}</div>
+                            <div class="digit-row">
+                                <span class="borrow-1 ${w.borrows.o ? 'active' : ''}">1</span>
+                                <span class="digit ${w.crossed.o ? 'crossed' : ''}">${o1}</span>
+                            </div>
+                        </div>
+
+                        <div style="grid-column: 1;">-</div>
+                        <div>${h2}</div>
+                        <div>${t2}</div>
+                        <div>${o2}</div>
+
+                        <div class="line-row"></div>
+
+                        <div></div>
+                        <div class="digit-input-print">${w.inputs.h || '0'}</div>
+                        <div class="digit-input-print">${w.inputs.t || '0'}</div>
+                        <div class="digit-input-print">${w.inputs.o || '0'}</div>
+                    </div>
                 </div>
             `;
+        }
+
+        printBtn.addEventListener('click', () => {
+            if (savedWorkings.length === 0) {
+                alert('No workings saved to print!');
+                return;
+            }
+            
+            printContent.innerHTML = savedWorkings.map(w => createPrintItem(w)).join('');
             window.print();
         });
 
         generateProblem();
+        updatePrintButton();
     </script>
 </body>
 </html>
